@@ -48,6 +48,10 @@
   .thanks p{color:#6a7385;margin:0 0 22px}
   .btn.insta{background:var(--brand-accent);color:var(--brand-primary)}
   .btn.insta:hover{background:var(--brand-primary);color:#fff}
+    .progress{display:none;margin-top:16px}
+  .progress .row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;color:var(--brand-primary);font-weight:600}
+  .progress .track{height:12px;background:var(--brand-border);border-radius:999px;overflow:hidden}
+  .progress .bar{height:100%;width:0;background:var(--brand-accent);border-radius:999px;transition:width .2s}
 </style>
 </head>
 <body>
@@ -123,6 +127,10 @@
       </div>
 
       <button type="submit" id="submitBtn">إرسال</button>
+            <div class="progress" id="progress">
+        <div class="row"><span id="progLabel">جارٍ رفع الملف...</span><span id="progPct">0%</span></div>
+        <div class="track"><div class="bar" id="progBar"></div></div>
+      </div>
     </form>
 
     <div class="thanks" id="thanks">
@@ -158,6 +166,23 @@
       r.readAsDataURL(file);
     });
   }
+    function sendWithProgress(payload){
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', SCRIPT_URL);
+      xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+      xhr.upload.onprogress = (e) => {
+        if (!e.lengthComputable) return;
+        const p = Math.round(e.loaded / e.total * 100);
+        document.getElementById('progBar').style.width = p + '%';
+        document.getElementById('progPct').textContent = p + '%';
+        if (p >= 100) document.getElementById('progLabel').textContent = 'جارٍ الحفظ، لحظات...';
+      };
+      xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch (err) { reject(err); } };
+      xhr.onerror = () => reject(new Error('network'));
+      xhr.send(JSON.stringify(payload));
+    });
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -180,6 +205,7 @@
     if (!file) return showError('يرجى تحميل السيرة الذاتية');
 
     btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
+    document.getElementById('progress').style.display = 'block';
     try {
       const payload = {
         name, gender, age, languages: languages.join('، '), car, camera, experience,
@@ -187,13 +213,13 @@
         fileData: await readFile(file)
       };
       // text/plain لتجنب مشاكل CORS مع Apps Script
-      const res = await fetch(SCRIPT_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-      const data = await res.json();
+      const data = await sendWithProgress(payload);
       if (!data.ok) throw new Error(data.error || 'خطأ غير معروف');
       form.style.display = 'none';
       document.getElementById('thanks').style.display = 'block';
       window.scrollTo({top:0,behavior:'smooth'});
     } catch (err) {
+      document.getElementById('progress').style.display = 'none';
       showError('تعذر الإرسال، يرجى المحاولة مرة أخرى.');
       btn.disabled = false; btn.textContent = 'إرسال';
     }
