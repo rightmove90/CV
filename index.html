@@ -118,8 +118,8 @@
 
       <div class="field">
         <label class="title" for="cv">السيرة الذاتية</label>
-        <input type="file" id="cv" name="cv" accept=".pdf,.doc,.docx">
-        <div class="hint">PDF أو Word — الحد الأقصى 5 ميغابايت</div>
+        <input type="file" id="cv" name="cv">
+        <div class="hint">يمكنك رفع ملف أو صورة </div>
       </div>
 
       <button type="submit" id="submitBtn">إرسال</button>
@@ -137,7 +137,6 @@
 <script>
   // ===== ضع هنا رابط Web App الناتج من Google Apps Script =====
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweluPm14nTh0rwSFzyTQ-rkvIScBvgZ4rQ3ssviCHutnfj-Csrniv88yCvZTWK-yudrA/exec";
-  const MAX_SIZE = 5 * 1024 * 1024;
 
   // تعبئة قائمة العمر
   const ageSel = document.getElementById('age');
@@ -179,7 +178,6 @@
     if (!camera) return showError('يرجى الإجابة عن سؤال الظهور أمام الكاميرا');
     if (!experience) return showError('يرجى اختيار مستوى الخبرة');
     if (!file) return showError('يرجى تحميل السيرة الذاتية');
-    if (file.size > MAX_SIZE) return showError('حجم الملف أكبر من 5 ميغابايت');
 
     btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
     try {
