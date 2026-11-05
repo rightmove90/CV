@@ -166,21 +166,30 @@
       r.readAsDataURL(file);
     });
   }
-    function sendWithProgress(payload){
+      function sendWithProgress(payload){
     return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', SCRIPT_URL);
-      xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
-      xhr.upload.onprogress = (e) => {
-        if (!e.lengthComputable) return;
-        const p = Math.round(e.loaded / e.total * 100);
-        document.getElementById('progBar').style.width = p + '%';
-        document.getElementById('progPct').textContent = p + '%';
-        if (p >= 100) document.getElementById('progLabel').textContent = 'جارٍ الحفظ، لحظات...';
-      };
-      xhr.onload = () => { try { resolve(JSON.parse(xhr.responseText)); } catch (err) { reject(err); } };
-      xhr.onerror = () => reject(new Error('network'));
-      xhr.send(JSON.stringify(payload));
+      const bar = document.getElementById('progBar');
+      const pct = document.getElementById('progPct');
+      let p = 0;
+      const timer = setInterval(() => {
+        p += (92 - p) * 0.03;               // يتباطأ كلما اقترب من 92%
+        bar.style.width = p + '%';
+        pct.textContent = Math.round(p) + '%';
+      }, 300);
+
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(data => {
+        clearInterval(timer);
+        bar.style.width = '100%';
+        pct.textContent = '100%';
+        resolve(data);
+      })
+      .catch(err => { clearInterval(timer); reject(err); });
     });
   }
 
